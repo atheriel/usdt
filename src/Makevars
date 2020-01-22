@@ -1,0 +1,13 @@
+PKG_CPPFLAGS = -Ivendor/libstapsdt/src
+PKG_LIBS = -Lvendor/libstapsdt/out -lstapsdt -lelf -ldl
+
+all: $(SHLIB)
+$(SHLIB): vendor
+
+vendor:
+	cd vendor/libstapsdt && $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS) $(CPICFLAGS)" AR="$(AR)" RANLIB="$(RANLIB)"
+
+clean:
+	cd vendor/libstapsdt && $(MAKE) clean
+
+.PHONY: all vendor clean
