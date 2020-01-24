@@ -81,15 +81,126 @@ SEXP R_usdt_provider_disable(SEXP ptr)
   return R_NilValue;
 }
 
+SEXP R_usdt_add_probe(SEXP provider, SEXP name, SEXP args)
+{
+  const char *name_str = CHAR(Rf_asChar(name));
+  struct provider *p = (struct provider *) R_ExternalPtrAddr(provider);
+  if (!p) {
+    Rf_error("Invalid USDT provider.\n");
+  }
+  if (p->loaded) {
+    Rf_error("Probes cannot be added while the provider is loaded.\n");
+  }
+  int arg_count = Rf_asInteger(args);
+  SDTProbe_t *probe;
+
+  switch (arg_count) {
+  case 1:
+    probe = providerAddProbe(p->provider, name_str, 1, int32);
+    break;
+  case 2:
+    probe = providerAddProbe(p->provider, name_str, 2, int32, int32);
+    break;
+  case 3:
+    probe = providerAddProbe(p->provider, name_str, 3, int32, int32, int32);
+    break;
+  case 4:
+    probe = providerAddProbe(p->provider, name_str, 4, int32, int32, int32,
+                             int32);
+    break;
+  case 5:
+    probe = providerAddProbe(p->provider, name_str, 5, int32, int32, int32,
+                             int32, int32);
+    break;
+  case 6:
+    probe = providerAddProbe(p->provider, name_str, 6, int32, int32, int32,
+                             int32, int32, int32);
+    break;
+  default:
+    probe = providerAddProbe(p->provider, name_str, 0);
+    break;
+  }
+  if (!probe) {
+    Rf_error("Failed to create USDT probe.\n");
+  }
+
+  SEXP ptr = PROTECT(R_MakeExternalPtr(probe, R_NilValue, R_NilValue));
+  UNPROTECT(1);
+  return ptr;
+}
+
+SEXP R_usdt_fire_probe(SEXP args)
+{
+  args = CDR(args);
+  SEXP ptr = CAR(args);
+  SDTProbe_t *probe = (SDTProbe_t *) R_ExternalPtrAddr(ptr);
+  if (ptr == R_NilValue || !probe) {
+    Rf_error("Invalid USDT probe.\n");
+  }
+  if (!probeIsEnabled(probe)) {
+    Rprintf("Not enabled.\n");
+    return R_NilValue;
+  }
+  args = CDR(args);
+  size_t arg_count = Rf_length(args);
+  if (arg_count != probe->argCount) {
+    Rf_error("Invalid number of arguments. Expected %d, got %d.\n",
+             probe->argCount, arg_count);
+  }
+  SEXP first;
+
+  switch (arg_count) {
+  case 1:
+    probeFire(probe, Rf_asInteger(CAR(args)));
+    break;
+  case 2:
+    probeFire(probe, Rf_asInteger(CAR(args)), Rf_asInteger(CADR(args)));
+    break;
+  case 3:
+    probeFire(probe, Rf_asInteger(CAR(args)), Rf_asInteger(CADR(args)),
+              Rf_asInteger(CADDR(args)));
+    break;
+  case 4:
+    probeFire(probe, Rf_asInteger(CAR(args)), Rf_asInteger(CADR(args)),
+              Rf_asInteger(CADDR(args)), Rf_asInteger(CADDDR(args)));
+    break;
+  case 5:
+    first = CAR(args);
+    args = CDR(args);
+    probeFire(probe, first, Rf_asInteger(CAR(args)),
+              Rf_asInteger(CADR(args)), Rf_asInteger(CADDR(args)),
+              Rf_asInteger(CADDDR(args)));
+    break;
+  case 6:
+    first = CAR(args);
+    args = CDR(args);
+    probeFire(probe, first, Rf_asInteger(CAR(args)),
+              Rf_asInteger(CADR(args)), Rf_asInteger(CADDR(args)),
+              Rf_asInteger(CADDDR(args)), Rf_asInteger(CAD4R(args)));
+    break;
+  default:
+    probeFire(probe);
+    break;
+  }
+
+  return R_NilValue;
+}
+
 static const R_CallMethodDef usdt_entries[] = {
   {"R_usdt_provider", (DL_FUNC) &R_usdt_provider, 1},
   {"R_usdt_provider_is_enabled", (DL_FUNC) &R_usdt_provider_is_enabled, 1},
   {"R_usdt_provider_enable", (DL_FUNC) &R_usdt_provider_enable, 1},
   {"R_usdt_provider_disable", (DL_FUNC) &R_usdt_provider_disable, 1},
+  {"R_usdt_add_probe", (DL_FUNC) &R_usdt_add_probe, 3},
+  {NULL, NULL, 0}
+};
+
+static const R_ExternalMethodDef usdt_entries_ext[] = {
+  {"R_usdt_fire_probe", (DL_FUNC) &R_usdt_fire_probe, 1},
   {NULL, NULL, 0}
 };
 
 void R_init_usdt(DllInfo *info) {
-  R_registerRoutines(info, NULL, usdt_entries, NULL, NULL);
+  R_registerRoutines(info, NULL, usdt_entries, NULL, usdt_entries_ext);
   R_useDynamicSymbols(info, FALSE);
 }

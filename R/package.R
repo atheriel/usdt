@@ -21,5 +21,17 @@ usdt_provider_disable <- function(provider) {
   provider
 }
 
+usdt_add_probe <- function(provider, name, nargs) {
+  stopifnot(inherits(provider, "usdt_provider"))
+  ptr <- .Call(R_usdt_add_probe, provider$ptr, name, nargs)
+  structure(list(ptr = ptr, name = name), class = "usdt_probe")
+}
+
+usdt_fire_probe <- function(probe, ...) {
+  stopifnot(inherits(probe, "usdt_probe"))
+  .External("R_usdt_fire_probe", probe$ptr, ...)
+  invisible(NULL)
+}
+
 #' @useDynLib usdt, .registration = TRUE
 NULL
