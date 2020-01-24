@@ -7,6 +7,8 @@ Authors@R:
 Description: Provides a way to dynamically define and fire 'USDT' probes
   for use with tracing utilities such as 'bpftrace' or 'bcc' for Linux.
 License: GPL-2
+Suggests:
+  testthat (>= 2.1.0)
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1
