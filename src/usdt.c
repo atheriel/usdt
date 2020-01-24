@@ -92,6 +92,9 @@ SEXP R_usdt_add_probe(SEXP provider, SEXP name, SEXP args)
     Rf_error("Probes cannot be added while the provider is loaded.\n");
   }
   int arg_count = Rf_asInteger(args);
+  if (arg_count > 6) {
+    Rf_error("Probes cannot accept more than 6 arguments at present.");
+  }
   SDTProbe_t *probe;
 
   switch (arg_count) {
@@ -138,8 +141,7 @@ SEXP R_usdt_fire_probe(SEXP args)
     Rf_error("Invalid USDT probe.\n");
   }
   if (!probeIsEnabled(probe)) {
-    Rprintf("Not enabled.\n");
-    return R_NilValue;
+    return Rf_ScalarLogical(FALSE);
   }
   args = CDR(args);
   size_t arg_count = Rf_length(args);
@@ -183,7 +185,7 @@ SEXP R_usdt_fire_probe(SEXP args)
     break;
   }
 
-  return R_NilValue;
+  return Rf_ScalarLogical(TRUE);
 }
 
 static const R_CallMethodDef usdt_entries[] = {

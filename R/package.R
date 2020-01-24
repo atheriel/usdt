@@ -30,7 +30,6 @@ usdt_add_probe <- function(provider, name, nargs) {
 usdt_fire_probe <- function(probe, ...) {
   stopifnot(inherits(probe, "usdt_probe"))
   .External("R_usdt_fire_probe", probe$ptr, ...)
-  invisible(NULL)
 }
 
 #' @useDynLib usdt, .registration = TRUE
