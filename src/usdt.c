@@ -1,4 +1,5 @@
 #include <stdlib.h> /* for malloc */
+#include <stdint.h> /* for uint64_t */
 #include <Rinternals.h>
 #include "libstapsdt.h"
 
@@ -81,43 +82,86 @@ SEXP R_usdt_provider_disable(SEXP ptr)
   return R_NilValue;
 }
 
-SEXP R_usdt_add_probe(SEXP provider, SEXP name, SEXP args)
+ArgType_t usdt_argtype_from_sexp(SEXP arg)
 {
-  const char *name_str = CHAR(Rf_asChar(name));
+  switch(TYPEOF(arg)) {
+  case LGLSXP:
+    /* fallthrough */
+  case INTSXP:
+    return int32;
+  case STRSXP:
+    /* fallthrough */
+  case REALSXP:
+    return uint64;
+  default:
+    Rf_error("Can't pass R '%s' objects to a probe.", Rf_type2char(TYPEOF(arg)));
+  }
+}
+
+SEXP R_usdt_add_probe(SEXP args)
+{
+  args = CDR(args);
+  SEXP provider = CAR(args);
+  SEXP name = CADR(args);
   struct provider *p = (struct provider *) R_ExternalPtrAddr(provider);
+  const char *name_str = CHAR(Rf_asChar(name));
   if (!p) {
     Rf_error("Invalid USDT provider.\n");
   }
   if (p->loaded) {
     Rf_error("Probes cannot be added while the provider is loaded.\n");
   }
-  int arg_count = Rf_asInteger(args);
+  args = CDDR(args);
+  int arg_count = Rf_length(args);
   if (arg_count > 6) {
     Rf_error("Probes cannot accept more than 6 arguments at present.");
   }
   SDTProbe_t *probe;
+  SEXP first;
 
   switch (arg_count) {
   case 1:
-    probe = providerAddProbe(p->provider, name_str, 1, int32);
+    probe = providerAddProbe(p->provider, name_str, 1,
+                             usdt_argtype_from_sexp(CAR(args)));
     break;
   case 2:
-    probe = providerAddProbe(p->provider, name_str, 2, int32, int32);
+    probe = providerAddProbe(p->provider, name_str, 2,
+                             usdt_argtype_from_sexp(CAR(args)),
+                             usdt_argtype_from_sexp(CADR(args)));
     break;
   case 3:
-    probe = providerAddProbe(p->provider, name_str, 3, int32, int32, int32);
+    probe = providerAddProbe(p->provider, name_str, 3,
+                             usdt_argtype_from_sexp(CAR(args)),
+                             usdt_argtype_from_sexp(CADR(args)),
+                             usdt_argtype_from_sexp(CADDR(args)));
     break;
   case 4:
-    probe = providerAddProbe(p->provider, name_str, 4, int32, int32, int32,
-                             int32);
+    probe = providerAddProbe(p->provider, name_str, 4,
+                             usdt_argtype_from_sexp(CAR(args)),
+                             usdt_argtype_from_sexp(CADR(args)),
+                             usdt_argtype_from_sexp(CADDR(args)),
+                             usdt_argtype_from_sexp(CADDDR(args)));
     break;
   case 5:
-    probe = providerAddProbe(p->provider, name_str, 5, int32, int32, int32,
-                             int32, int32);
+    first = CAR(args);
+    args = CDR(args);
+    probe = providerAddProbe(p->provider, name_str, 5,
+                             usdt_argtype_from_sexp(first),
+                             usdt_argtype_from_sexp(CAR(args)),
+                             usdt_argtype_from_sexp(CADR(args)),
+                             usdt_argtype_from_sexp(CADDR(args)),
+                             usdt_argtype_from_sexp(CADDDR(args)));
     break;
   case 6:
-    probe = providerAddProbe(p->provider, name_str, 6, int32, int32, int32,
-                             int32, int32, int32);
+    first = CAR(args);
+    args = CDR(args);
+    probe = providerAddProbe(p->provider, name_str, 6,
+                             usdt_argtype_from_sexp(first),
+                             usdt_argtype_from_sexp(CAR(args)),
+                             usdt_argtype_from_sexp(CADR(args)),
+                             usdt_argtype_from_sexp(CADDR(args)),
+                             usdt_argtype_from_sexp(CADDDR(args)),
+                             usdt_argtype_from_sexp(CAD4R(args)));
     break;
   default:
     probe = providerAddProbe(p->provider, name_str, 0);
@@ -130,6 +174,26 @@ SEXP R_usdt_add_probe(SEXP provider, SEXP name, SEXP args)
   SEXP ptr = PROTECT(R_MakeExternalPtr(probe, R_NilValue, R_NilValue));
   UNPROTECT(1);
   return ptr;
+}
+
+uint64_t usdt_arg_from_sexp(SEXP arg)
+{
+  switch(TYPEOF(arg)) {
+  case LGLSXP:
+    return (uint64_t) LOGICAL(arg)[0];
+  case INTSXP:
+    return (uint64_t) INTEGER(arg)[0];
+  case STRSXP:
+    return (uint64_t) CHAR(Rf_asChar(arg));
+  case REALSXP: {
+    /* Format reals as strings. */
+    SEXP str = PROTECT(Rf_coerceVector(arg, STRSXP));
+    UNPROTECT(1);
+    return (uint64_t) CHAR(Rf_asChar(str));
+  }
+  default:
+    Rf_error("Can't pass R '%s' objects to a probe.", Rf_type2char(TYPEOF(arg)));
+  }
 }
 
 SEXP R_usdt_fire_probe(SEXP args)
@@ -153,32 +217,34 @@ SEXP R_usdt_fire_probe(SEXP args)
 
   switch (arg_count) {
   case 1:
-    probeFire(probe, Rf_asInteger(CAR(args)));
+    probeFire(probe, usdt_arg_from_sexp(CAR(args)));
     break;
   case 2:
-    probeFire(probe, Rf_asInteger(CAR(args)), Rf_asInteger(CADR(args)));
+    probeFire(probe, usdt_arg_from_sexp(CAR(args)),
+              usdt_arg_from_sexp(CADR(args)));
     break;
   case 3:
-    probeFire(probe, Rf_asInteger(CAR(args)), Rf_asInteger(CADR(args)),
-              Rf_asInteger(CADDR(args)));
+    probeFire(probe, usdt_arg_from_sexp(CAR(args)),
+              usdt_arg_from_sexp(CADR(args)), usdt_arg_from_sexp(CADDR(args)));
     break;
   case 4:
-    probeFire(probe, Rf_asInteger(CAR(args)), Rf_asInteger(CADR(args)),
-              Rf_asInteger(CADDR(args)), Rf_asInteger(CADDDR(args)));
+    probeFire(probe, usdt_arg_from_sexp(CAR(args)),
+              usdt_arg_from_sexp(CADR(args)), usdt_arg_from_sexp(CADDR(args)),
+              usdt_arg_from_sexp(CADDDR(args)));
     break;
   case 5:
     first = CAR(args);
     args = CDR(args);
-    probeFire(probe, first, Rf_asInteger(CAR(args)),
-              Rf_asInteger(CADR(args)), Rf_asInteger(CADDR(args)),
-              Rf_asInteger(CADDDR(args)));
+    probeFire(probe, usdt_arg_from_sexp(first), usdt_arg_from_sexp(CAR(args)),
+              usdt_arg_from_sexp(CADR(args)), usdt_arg_from_sexp(CADDR(args)),
+              usdt_arg_from_sexp(CADDDR(args)));
     break;
   case 6:
     first = CAR(args);
     args = CDR(args);
-    probeFire(probe, first, Rf_asInteger(CAR(args)),
-              Rf_asInteger(CADR(args)), Rf_asInteger(CADDR(args)),
-              Rf_asInteger(CADDDR(args)), Rf_asInteger(CAD4R(args)));
+    probeFire(probe, usdt_arg_from_sexp(first), usdt_arg_from_sexp(CAR(args)),
+              usdt_arg_from_sexp(CADR(args)), usdt_arg_from_sexp(CADDR(args)),
+              usdt_arg_from_sexp(CADDDR(args)), usdt_arg_from_sexp(CAD4R(args)));
     break;
   default:
     probeFire(probe);
@@ -193,12 +259,12 @@ static const R_CallMethodDef usdt_entries[] = {
   {"R_usdt_provider_is_enabled", (DL_FUNC) &R_usdt_provider_is_enabled, 1},
   {"R_usdt_provider_enable", (DL_FUNC) &R_usdt_provider_enable, 1},
   {"R_usdt_provider_disable", (DL_FUNC) &R_usdt_provider_disable, 1},
-  {"R_usdt_add_probe", (DL_FUNC) &R_usdt_add_probe, 3},
   {NULL, NULL, 0}
 };
 
 static const R_ExternalMethodDef usdt_entries_ext[] = {
-  {"R_usdt_fire_probe", (DL_FUNC) &R_usdt_fire_probe, 1},
+  {"R_usdt_add_probe", (DL_FUNC) &R_usdt_add_probe, -1},
+  {"R_usdt_fire_probe", (DL_FUNC) &R_usdt_fire_probe, -1},
   {NULL, NULL, 0}
 };
 

@@ -21,9 +21,9 @@ usdt_provider_disable <- function(provider) {
   provider
 }
 
-usdt_add_probe <- function(provider, name, nargs) {
+usdt_add_probe <- function(provider, name, ...) {
   stopifnot(inherits(provider, "usdt_provider"))
-  ptr <- .Call(R_usdt_add_probe, provider$ptr, name, nargs)
+  ptr <- .External(R_usdt_add_probe, provider$ptr, name, ...)
   structure(list(ptr = ptr, name = name), class = "usdt_probe")
 }
 
