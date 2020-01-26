@@ -27,9 +27,10 @@ usdt_add_probe <- function(provider, name, ...) {
   structure(list(ptr = ptr, name = name), class = "usdt_probe")
 }
 
-usdt_fire_probe <- function(probe, ...) {
+usdt_fire_probe <- function(probe, fun) {
   stopifnot(inherits(probe, "usdt_probe"))
-  .External("R_usdt_fire_probe", probe$ptr, ...)
+  stopifnot(is.function(fun))
+  .Call("R_usdt_fire_probe", probe$ptr, fun, parent.frame())
 }
 
 #' @useDynLib usdt, .registration = TRUE

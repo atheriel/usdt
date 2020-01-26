@@ -196,10 +196,8 @@ uint64_t usdt_arg_from_sexp(SEXP arg)
   }
 }
 
-SEXP R_usdt_fire_probe(SEXP args)
+SEXP R_usdt_fire_probe(SEXP ptr, SEXP fun, SEXP env)
 {
-  args = CDR(args);
-  SEXP ptr = CAR(args);
   SDTProbe_t *probe = (SDTProbe_t *) R_ExternalPtrAddr(ptr);
   if (ptr == R_NilValue || !probe) {
     Rf_error("Invalid USDT probe.\n");
@@ -207,50 +205,58 @@ SEXP R_usdt_fire_probe(SEXP args)
   if (!probeIsEnabled(probe)) {
     return Rf_ScalarLogical(FALSE);
   }
-  args = CDR(args);
+  SEXP fcall = PROTECT(Rf_lang1(fun));
+  SEXP args = PROTECT(Rf_eval(fcall, env));
+  if (!Rf_isNewList(args)) {
+    Rf_error("Expected the callback to return a list, got '%s'.",
+             Rf_type2char(TYPEOF(args)));
+  }
   size_t arg_count = Rf_length(args);
   if (arg_count != probe->argCount) {
-    Rf_error("Invalid number of arguments. Expected %d, got %d.\n",
+    Rf_error("Invalid number of probe arguments. Expected %d, got %d.\n",
              probe->argCount, arg_count);
   }
-  SEXP first;
 
   switch (arg_count) {
   case 1:
-    probeFire(probe, usdt_arg_from_sexp(CAR(args)));
+    probeFire(probe, usdt_arg_from_sexp(VECTOR_ELT(args, 0)));
     break;
   case 2:
-    probeFire(probe, usdt_arg_from_sexp(CAR(args)),
-              usdt_arg_from_sexp(CADR(args)));
+    probeFire(probe, usdt_arg_from_sexp(VECTOR_ELT(args, 0)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 1)));
     break;
   case 3:
-    probeFire(probe, usdt_arg_from_sexp(CAR(args)),
-              usdt_arg_from_sexp(CADR(args)), usdt_arg_from_sexp(CADDR(args)));
+    probeFire(probe, usdt_arg_from_sexp(VECTOR_ELT(args, 0)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 1)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 2)));
     break;
   case 4:
-    probeFire(probe, usdt_arg_from_sexp(CAR(args)),
-              usdt_arg_from_sexp(CADR(args)), usdt_arg_from_sexp(CADDR(args)),
-              usdt_arg_from_sexp(CADDDR(args)));
+    probeFire(probe, usdt_arg_from_sexp(VECTOR_ELT(args, 0)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 1)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 2)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 3)));
     break;
   case 5:
-    first = CAR(args);
-    args = CDR(args);
-    probeFire(probe, usdt_arg_from_sexp(first), usdt_arg_from_sexp(CAR(args)),
-              usdt_arg_from_sexp(CADR(args)), usdt_arg_from_sexp(CADDR(args)),
-              usdt_arg_from_sexp(CADDDR(args)));
+    probeFire(probe, usdt_arg_from_sexp(VECTOR_ELT(args, 0)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 1)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 2)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 3)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 4)));
     break;
   case 6:
-    first = CAR(args);
-    args = CDR(args);
-    probeFire(probe, usdt_arg_from_sexp(first), usdt_arg_from_sexp(CAR(args)),
-              usdt_arg_from_sexp(CADR(args)), usdt_arg_from_sexp(CADDR(args)),
-              usdt_arg_from_sexp(CADDDR(args)), usdt_arg_from_sexp(CAD4R(args)));
+    probeFire(probe, usdt_arg_from_sexp(VECTOR_ELT(args, 0)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 1)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 2)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 3)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 4)),
+              usdt_arg_from_sexp(VECTOR_ELT(args, 5)));
     break;
   default:
     probeFire(probe);
     break;
   }
 
+  UNPROTECT(2);
   return Rf_ScalarLogical(TRUE);
 }
 
@@ -259,12 +265,12 @@ static const R_CallMethodDef usdt_entries[] = {
   {"R_usdt_provider_is_enabled", (DL_FUNC) &R_usdt_provider_is_enabled, 1},
   {"R_usdt_provider_enable", (DL_FUNC) &R_usdt_provider_enable, 1},
   {"R_usdt_provider_disable", (DL_FUNC) &R_usdt_provider_disable, 1},
+  {"R_usdt_fire_probe", (DL_FUNC) &R_usdt_fire_probe, 3},
   {NULL, NULL, 0}
 };
 
 static const R_ExternalMethodDef usdt_entries_ext[] = {
   {"R_usdt_add_probe", (DL_FUNC) &R_usdt_add_probe, -1},
-  {"R_usdt_fire_probe", (DL_FUNC) &R_usdt_fire_probe, -1},
   {NULL, NULL, 0}
 };
 

@@ -11,7 +11,8 @@ testthat::test_that("Probes behalve as expected", {
   p <- usdt_provider("testthat")
   probe <- usdt_add_probe(p, "p1", integer(), logical(), character(), numeric())
 
-  testthat::expect_false(usdt_fire_probe(probe, 2L, FALSE, "string", 1.267))
+  cb <- function() list(2L, FALSE, "string", 1.267)
+  testthat::expect_false(usdt_fire_probe(probe, cb))
 
   testthat::expect_error(
     usdt_add_probe(
@@ -37,5 +38,5 @@ testthat::test_that("Probes behalve as expected", {
     regexp = "Probes cannot be added while the provider is loaded"
   )
 
-  testthat::expect_false(usdt_fire_probe(probe, 2L, FALSE, "string", 1.267))
+  testthat::expect_false(usdt_fire_probe(probe, cb))
 })
