@@ -1,3 +1,4 @@
 ^usdt\.Rproj$
 ^\.Rproj\.user$
 ^src/vendor/libstapsdt/build$
+^README\.Rmd$
