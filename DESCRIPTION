@@ -1,12 +1,15 @@
 Package: usdt
 Title: 'Userspace Statically Defined Tracepoints' for R
 Version: 0.0.0.9000
-Authors@R:
-  person("Aaron", "Jacobs", role = c("aut", "cre"),
-         email = "atheriel@gmail.com")
+Authors@R: c(
+  person("Aaron", "Jacobs", role = c("aut", "cre", "cph"),
+         email = "atheriel@gmail.com"),
+  person("Sthima", role = "cph",
+         comment = "Bundled libstapsdt under its MIT license.")
+  )
 Description: Provides a way to dynamically define and fire 'USDT' probes
   for use with tracing utilities such as 'bpftrace' or 'bcc' for Linux.
-License: GPL-2
+License: GPL (>= 2)
 Imports:
   R6
 Suggests:
