@@ -5,7 +5,9 @@ Authors@R: c(
   person("Aaron", "Jacobs", role = c("aut", "cre", "cph"),
          email = "atheriel@gmail.com"),
   person("Sthima", role = "cph",
-         comment = "Bundled libstapsdt under its MIT license.")
+         comment = "Bundled libstapsdt under its MIT license."),
+  person("Chris", "Andrews", role = "cph",
+         comment = "Bundled libusdt under its BSD-2-Clause license.")
   )
 Description: Provides a way to dynamically define and fire 'USDT' probes
   for use with tracing utilities such as 'bpftrace' or 'bcc' for Linux.
