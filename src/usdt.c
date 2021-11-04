@@ -1,5 +1,5 @@
 #include <stdlib.h> /* for malloc */
-#include <stdint.h> /* for uint64_t */
+#include <stdint.h> /* for uintptr_t */
 #include <Rinternals.h>
 
 #ifdef __linux
@@ -53,9 +53,9 @@ void probeFire(probe_t *probe, ...)
 {
   va_list ap;
   va_start(ap, probe);
-  uint64_t args[6] = {0};
+  uintptr_t args[6] = {0};
   for(int i = 0; i < probe->argc; i++) {
-    args[i] = va_arg(ap, uint64_t);
+    args[i] = va_arg(ap, uintptr_t);
   }
 
   usdt_fire_probe(probe->probe, probe->argc, (void *) &args);
@@ -315,20 +315,20 @@ SEXP R_usdt_add_probe(SEXP args)
 #endif
 }
 
-uint64_t usdt_arg_from_sexp(SEXP arg)
+uintptr_t usdt_arg_from_sexp(SEXP arg)
 {
   switch(TYPEOF(arg)) {
   case LGLSXP:
-    return (uint64_t) LOGICAL(arg)[0];
+    return (uintptr_t) LOGICAL(arg)[0];
   case INTSXP:
-    return (uint64_t) INTEGER(arg)[0];
+    return (uintptr_t) INTEGER(arg)[0];
   case STRSXP:
-    return (uint64_t) CHAR(Rf_asChar(arg));
+    return (uintptr_t) CHAR(Rf_asChar(arg));
   case REALSXP: {
     /* Format reals as strings. */
     SEXP str = PROTECT(Rf_coerceVector(arg, STRSXP));
     UNPROTECT(1);
-    return (uint64_t) CHAR(Rf_asChar(str));
+    return (uintptr_t) CHAR(Rf_asChar(str));
   }
   default:
     Rf_error("Can't pass R '%s' objects to a probe.", Rf_type2char(TYPEOF(arg)));

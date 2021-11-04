@@ -40,6 +40,7 @@ p$fire("add-name", function() list(1L, "First", "Last"))
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Provider$new(name)}\if{html}{\out{</div>}}
@@ -55,6 +56,7 @@ p$fire("add-name", function() list(1L, "First", "Last"))
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-enable"></a>}}
+\if{latex}{\out{\hypertarget{method-enable}{}}}
 \subsection{Method \code{enable()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Provider$enable()}\if{html}{\out{</div>}}
@@ -68,6 +70,7 @@ Enable the provider, which makes it possible to fire probes.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-disable"></a>}}
+\if{latex}{\out{\hypertarget{method-disable}{}}}
 \subsection{Method \code{disable()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Provider$disable()}\if{html}{\out{</div>}}
@@ -80,6 +83,7 @@ Disable the provider.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-add_probe"></a>}}
+\if{latex}{\out{\hypertarget{method-add_probe}{}}}
 \subsection{Method \code{add_probe()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Provider$add_probe(name, ...)}\if{html}{\out{</div>}}
@@ -103,6 +107,7 @@ Add a probe. Probes generally refer to a specific event -- e.g.
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-fire"></a>}}
+\if{latex}{\out{\hypertarget{method-fire}{}}}
 \subsection{Method \code{fire()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Provider$fire(probe, fun)}\if{html}{\out{</div>}}

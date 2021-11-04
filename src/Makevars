@@ -15,11 +15,20 @@ clean:
 else
 PKG_LIBS = -Lvendor/libusdt -lusdt
 
+# Solaris workarounds.
+ifeq ($(UNAME),SunOS)
+# libusdt uses isainfo -k to detect the architecture on Solaris, which seems to
+# be incompatible with R's Solaris environment.
+ARCH := $(shell uname -p)
+else
+ARCH := $(shell uname -m)
+endif
+
 vendor:
-	cd vendor/libusdt && $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS) $(CPICFLAGS)" AR="$(AR)" RANLIB="$(RANLIB)"
+	$(MAKE) -C vendor/libusdt ARCH="$(ARCH)" CC="$(CC)" CFLAGS="$(CFLAGS) $(CPICFLAGS)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" RANLIB="$(RANLIB)"
 
 clean:
-	cd vendor/libusdt && $(MAKE) clean
+	$(MAKE) -C vendor/libusdt clean
 endif
 
 .PHONY: all vendor clean

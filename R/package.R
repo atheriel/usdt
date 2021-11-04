@@ -20,8 +20,9 @@
 #' # listening at the moment.
 #' p$fire("add-name", function() list(1L, "First", "Last"))
 #'
+#' @importFrom R6 R6Class
 #' @export
-Provider <- R6::R6Class(
+Provider <- R6Class(
   "UsdtProvider",
   cloneable = FALSE,
   public = list(

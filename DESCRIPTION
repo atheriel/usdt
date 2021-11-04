@@ -16,7 +16,7 @@ Imports:
   R6
 Suggests:
   testthat (>= 2.1.0)
-SystemRequirements: GNU make
+SystemRequirements: GNU make; libelf on Linux
+OS_type: unix
 Encoding: UTF-8
-LazyData: true
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.1

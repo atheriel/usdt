@@ -25,6 +25,9 @@ void sdtSetError(SDTProvider_t *provider, SDTError_t error, ...) {
 
   va_start(argp, error);
   provider->errno = error;
-  (void)vasprintf(&provider->error, sdtErrors[error], argp);
+  // Silence warnings about vasprintf's return value.
+  if (vasprintf(&provider->error, sdtErrors[error], argp) < 0) {
+    provider->error = "";
+  }
   va_end(argp);
 }

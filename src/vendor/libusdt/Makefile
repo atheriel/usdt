@@ -68,7 +68,9 @@ all: libusdt.a
 
 libusdt.a: $(objects) $(headers)
 	rm -f libusdt.a
-	$(AR) cru libusdt.a $(objects) 
+	which $(AR)
+	ls -ahl .
+	$(AR) -cruv libusdt.a $(objects) || true
 	$(RANLIB) libusdt.a
 
 # Tracepoints build. 
